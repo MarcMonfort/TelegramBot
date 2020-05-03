@@ -11,3 +11,11 @@ Empexar en el 0 o en el 1?
 Podria aparecer problemas al compartir las lista en la operacion Skyline + N, pero como en ningun caso estamos modificando los valores internos, height i top de forma individual, entonces no hay ningun problema en compartir las listas. Y es mas eficiente, con menos espacio.
 
 Mucho tiempo al generar el Plot. Para mejorarlo normalizamos y pintamos el numero mínimo de edificios.
+
+El area solo se calculara del Skyline visible (sin contar la parte negativa)
+
+Al multiplicar el skyline N veces, tambíen se añadira la parte que este en negativo.
+
++++++++++
+
+Dubte sobre si fer un visitor unicament per detectar errors en les operacions, o millor ferho al visitor que genera els Skyline.

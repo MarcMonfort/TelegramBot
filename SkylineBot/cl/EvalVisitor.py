@@ -30,21 +30,33 @@ class EvalVisitor(SkylineVisitor):
     def visitMirror(self, ctx: SkylineParser.MirrorContext):
         return -self.visit(ctx.expr())
 
-    def visitArithmetic(self, ctx: SkylineParser.ArithmeticContext):    #tratamiento de errores!
-        l = [n for n in ctx.getChildren()]
+    def visitArithmetic(self, ctx: SkylineParser.ArithmeticContext):  # tratamiento de errores!
+        l = [self.visit(n) for n in ctx.getChildren()]
+
+        isSky = isinstance(l[0], Skyline) or isinstance(l[0], Skyline)
+        if isinstance(l[0], int) and isinstance(l[2], Skyline):
+            raise Exception("No existeix l'operació: N " + str(ctx.getChild(1)) +" Skyline")
 
         if ctx.ADD():
-            return self.visit(l[0]) + self.visit(l[2])
+            return l[0] + l[2]
         elif ctx.SUB():
-            return self.visit(l[0]) - self.visit(l[2])
+            if isinstance(l[2], Skyline):
+                raise Exception("No existeix l'operació: Skyline - Skyline")
+            return l[0] - l[2]
         elif ctx.MUL():
-            return self.visit(l[0]) * self.visit(l[2])
+            return l[0] * l[2]
         elif ctx.DIV():
-            return self.visit(l[0]) / self.visit(l[2])
+            if isSky:
+                raise Exception("Operació '/' incompatible amb Skyline")
+            return l[0] / l[2]
         elif ctx.POW():
-            return self.visit(l[0]) ** self.visit(l[2])
+            if isSky:
+                raise Exception("Operació '**' incompatible amb Skyline")
+            return l[0] ** l[2]
 
     def visitExprIdent(self, ctx: SkylineParser.ExprIdentContext):
+        if not str(ctx.ID()) in self.symTable:
+            raise Exception("Variable '" + str(ctx.ID()) + "' no definida: ")
         return self.symTable.get(str(ctx.ID()))
 
     def visitValue(self, ctx: SkylineParser.ValueContext):  # deberia crear skyline
@@ -53,14 +65,26 @@ class EvalVisitor(SkylineVisitor):
             return int(n.getText())
         elif ctx.building():
             xmin, top, xmax = self.visit(n)
-            return Skyline(xmin, top, xmax-xmin)
+            return Skyline.single(xmin, top, xmax)
         elif ctx.city():
             return self.visit(n)
 
     def visitBuilding(self, ctx: SkylineParser.BuildingContext):
-        xmin = int(ctx.NUM(0).getText())
-        top = int(ctx.NUM(1).getText())
-        xmax = int(ctx.NUM(2).getText())
+        xmin = self.visit(ctx.expr(0))
+        top = self.visit(ctx.expr(1))
+        xmax = self.visit(ctx.expr(2))
+
+        if not isinstance(xmin, int):
+            raise Exception("xmin no es un enter")
+        if not isinstance(top, int):
+            raise Exception("alçada no es un enter")
+        if not isinstance(xmax, int):
+            raise Exception("xmax no es un enter")
+        if (xmax <= xmin):
+            raise Exception(
+                "La posició final ha de ser més gran que la inicial: " + str(xmin) + '>' + str(xmax))
+        if (top < 0):
+            raise Exception("Alçada negativa: " + str(top))
         return xmin, top, xmax
 
     def visitMultiple(self, ctx: SkylineParser.MultipleContext):
@@ -75,7 +99,21 @@ class EvalVisitor(SkylineVisitor):
         return Skyline(start, height, width)
 
     def visitRandom(self, ctx: SkylineParser.RandomContext):
-        l = [int(n.getText()) for n in ctx.NUM()]
+        #l = [int(n.getText()) for n in ctx.NUM()]
+        l = [self.visit(n) for n in ctx.expr()]
+        for x in l:
+            if not isinstance(x, int):
+                raise Exception(
+                    "El valors en {n, h, w, xmin, xmax} han de ser enters.")
+        if (l[0] < 0):
+            raise Exception("Nombre d'edificis negatius: " + str(l[0]))
+        if (l[1] < 0):
+            raise Exception("Alçada negativa: " + str(l[1]))
+        if (l[2] <= 0):
+            raise Exception("Amplada inferior a 1: " + str(l[2]))
+        if (l[4] <= l[3]):
+            raise Exception(
+                "La posició final ha de ser més gran que la inicial: " + str(l[3]) + '>' + str(l[4]))
         return Skyline.random(l[0], l[1], l[2], l[3], l[4])
 
     def visitAssignStmt(self, ctx: SkylineParser.AssignStmtContext):

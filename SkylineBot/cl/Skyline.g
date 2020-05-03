@@ -9,7 +9,8 @@ statement
 expr 
     : '(' expr ')'                      # parenthesis
     | SUB expr                          # mirror
-    | expr op=MUL expr                  # arithmetic
+    | <assoc=right> expr op=POW expr    # arithmetic
+    | expr op=(MUL|DIV) expr            # arithmetic
     | expr op=(ADD|SUB) expr            # arithmetic
     | (building|city|NUM)               # value
     | ID                                # exprIdent
@@ -17,16 +18,18 @@ expr
 
 city
     : '[' building (',' building)* ']'              #multiple
-    | '{' NUM ',' NUM ',' NUM ',' NUM ',' NUM '}'   #random
+    | '{' expr ',' expr ',' expr ',' expr ',' expr '}'   #random
     ;
 
 building
-    : '(' NUM ',' NUM ',' NUM ')'
+    : '(' expr ',' expr ',' expr ')'
     ;
 
 MUL : '*' ;
+DIV : '/' ;
 ADD : '+' ;
 SUB : '-' ;
+POW : '**' ;
 
 ASSIGN : ':=' ;
 
