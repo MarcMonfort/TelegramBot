@@ -1,24 +1,17 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
-""" import matplotlib
-import matplotlib.pyplot as plt """
 
-import sys
+import matplotlib.pyplot as plt
+import pickle
+import os
+
 from antlr4 import *
 from cl.SkylineLexer import SkylineLexer
 from cl.SkylineParser import SkylineParser
-
 from cl.EvalVisitor import EvalVisitor
-from cl.TreeVisitor import TreeVisitor
-
-import matplotlib.pyplot as plt  # grafica
 
 from skyline import Skyline
 
-import random
-import os
-
-import pickle
 
 
 def start(update, context):
@@ -34,12 +27,13 @@ def help(update, context):
         chat_id=update.effective_chat.id,
         text="Comandes disponibles:"
         "\n/help llistat de les comandes disponibles."
-        "\n/start inicia la conversa amb el Bot"
-        "\n/author mostra el nom i el correu de l'autor del projecte"
-        "\n/lst mostra els identificadors definits i la seva àrea"
+        "\n/start inicia la conversa amb el Bot."
+        "\n/author mostra el nom i el correu de l'autor del projecte."
+        "\n/lst mostra els identificadors definits i la seva àrea."
         "\n/clean esborra tots els identificadors definits."
-        "\n/save id : Guarda un skyline definit amb el nom id.sky"
-        "\n/load id : Carrega el skyline de l'arxiu id.sky."
+        "\n/save *id* : Guarda el skyline definit amb l'identificador *id* a una base de dades permanent."
+        "\n/load *id* : Carrega el skyline amb l'identificador *id* de la base de dades permanent.",
+        parse_mode=ParseMode.MARKDOWN
     )
 
 
@@ -77,18 +71,19 @@ def clean(update, context):
 
 def save(update, context):
     try:
-        name = update.effective_chat.first_name
         user_id = update.effective_chat.id
         if not context.args:
-            raise Exception("id no indicat (/save id)")
+            raise Exception("id no indicat. Ús: /save id")
         id = context.args[0]
-
         if id not in context.user_data:
             raise Exception("Variable '" + id + "' no definida")
 
-        filename = 'database/' + str(user_id) + '.' + str(id) + '.sky'
-        outfile = open(filename, 'wb')
+        directory = "./database/" + str(user_id)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
 
+        filename = directory + '/' + str(id) + '.sky'
+        outfile = open(filename, 'wb')
         pickle.dump(context.user_data[str(id)], outfile)
         outfile.close()
     except Exception as e:
@@ -101,18 +96,20 @@ def save(update, context):
 
 def load(update, context):
     try:
-        name = update.effective_chat.first_name
         user_id = update.effective_chat.id
         if not context.args:
-            raise Exception("id no indicat (/load id)")
+            raise Exception("id no indicat. Ús: /load id")
         id = context.args[0]
-        
-        #mirar antes si existe el archivo!!!
-        filename = 'database/' + str(user_id) + '.' + str(id) + '.sky'
+
+        directory = "./database/" + str(user_id)
+        filename = directory + '/' + str(id) + '.sky'
+        if not os.path.isfile(filename):
+            raise Exception("No es troba cap Skyline amb id = '" +
+                            id + "'. Prova a guardar primer amb /save id")
+
         infile = open(filename, 'rb')
         sky = pickle.load(infile)
         infile.close()
-
         context.user_data[id] = sky
     except Exception as e:
         print(e)
@@ -122,16 +119,7 @@ def load(update, context):
             parse_mode=ParseMode.MARKDOWN)
 
 
-def counter(update, context):
-    if 'counter' not in context.user_data:
-        context.user_data['counter'] = 0
-    context.user_data['counter'] += 1
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=str(context.user_data['counter']))
-
-
-def tata(update, context):
+def skyComp(update, context):
     try:
         msg = update.message.text
         lexer = SkylineLexer(InputStream(msg))
@@ -140,15 +128,15 @@ def tata(update, context):
         tree = parser.root()
 
         numError = parser.getNumberOfSyntaxErrors()
-
         if numError > 0:
             raise Exception('Error de sintaxis!')
 
-        visitor2 = EvalVisitor(context.user_data)
-        a = visitor2.visit(tree)
+        visitor = EvalVisitor(context.user_data)
+        a = visitor.visit(tree)
 
         if isinstance(a, Skyline):
-            fitxer = "%d.png" % random.randint(1000000, 9999999)
+            user_id = update.effective_chat.id
+            fitxer = str(user_id) + "_tmp.png"
             area, top = a.plot()
             plt.savefig(fitxer, bbox_inches='tight')
             context.bot.send_photo(
@@ -177,11 +165,10 @@ dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('help', help))
 dispatcher.add_handler(CommandHandler('author', author))
 dispatcher.add_handler(CommandHandler('lst', lst))
-dispatcher.add_handler(CommandHandler('counter', counter))
 dispatcher.add_handler(CommandHandler('clean', clean))
 dispatcher.add_handler(CommandHandler('save', save))
 dispatcher.add_handler(CommandHandler('load', load))
-dispatcher.add_handler(MessageHandler(Filters.text, tata))
+dispatcher.add_handler(MessageHandler(Filters.text, skyComp))
 
 
 updater.start_polling()

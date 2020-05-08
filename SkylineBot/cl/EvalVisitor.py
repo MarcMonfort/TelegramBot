@@ -7,22 +7,15 @@ else:
     from SkylineParser import SkylineParser
     from SkylineVisitor import SkylineVisitor
 
-""" import sys
-sys.path.append("..") """
-
 
 class EvalVisitor(SkylineVisitor):
 
-    #symTable = dict()
-
-    def __init__(self, vars=dict()):
-        self.symTable = vars
+    def __init__(self, symTable=dict()):
+        self.symTable = symTable
 
     def visitRoot(self, ctx: SkylineParser.RootContext):
         n = next(ctx.getChildren())
         return self.visit(n)
-        # return Skyline(1,2,3)
-        # print(self.visit(n))
 
     def visitParenthesis(self, ctx: SkylineParser.ParenthesisContext):
         return self.visit(ctx.expr())
@@ -30,12 +23,13 @@ class EvalVisitor(SkylineVisitor):
     def visitMirror(self, ctx: SkylineParser.MirrorContext):
         return -self.visit(ctx.expr())
 
-    def visitArithmetic(self, ctx: SkylineParser.ArithmeticContext):  # tratamiento de errores!
+    def visitArithmetic(self, ctx: SkylineParser.ArithmeticContext):
         l = [self.visit(n) for n in ctx.getChildren()]
 
         isSky = isinstance(l[0], Skyline) or isinstance(l[0], Skyline)
         if isinstance(l[0], int) and isinstance(l[2], Skyline):
-            raise Exception("No existeix l'operació: N " + str(ctx.getChild(1)) +" Skyline")
+            raise Exception("No existeix l'operació: N " +
+                            str(ctx.getChild(1)) + " Skyline")
 
         if ctx.ADD():
             return l[0] + l[2]
@@ -51,7 +45,7 @@ class EvalVisitor(SkylineVisitor):
             return l[0] / l[2]
         elif ctx.POW():
             if isSky:
-                raise Exception("Operació '**' incompatible amb Skyline")
+                raise Exception("Operació 'Pow' incompatible amb Skyline")
             return l[0] ** l[2]
 
     def visitExprIdent(self, ctx: SkylineParser.ExprIdentContext):
@@ -59,7 +53,7 @@ class EvalVisitor(SkylineVisitor):
             raise Exception("Variable '" + str(ctx.ID()) + "' no definida: ")
         return self.symTable.get(str(ctx.ID()))
 
-    def visitValue(self, ctx: SkylineParser.ValueContext):  # deberia crear skyline
+    def visitValue(self, ctx: SkylineParser.ValueContext):
         n = next(ctx.getChildren())
         if ctx.NUM():
             return int(n.getText())
@@ -99,7 +93,6 @@ class EvalVisitor(SkylineVisitor):
         return Skyline(start, height, width)
 
     def visitRandom(self, ctx: SkylineParser.RandomContext):
-        #l = [int(n.getText()) for n in ctx.NUM()]
         l = [self.visit(n) for n in ctx.expr()]
         for x in l:
             if not isinstance(x, int):

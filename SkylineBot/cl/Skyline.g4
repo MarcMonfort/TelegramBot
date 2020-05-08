@@ -3,7 +3,7 @@ root : statement EOF ;
 
 statement
     : ID ASSIGN expr    # assignStmt
-    | expr              # nana
+    | expr              # exprStmt
     ; 
 
 expr 
@@ -17,13 +17,14 @@ expr
     ;
 
 city
-    : '[' building (',' building)* ']'              #multiple
-    | '{' expr ',' expr ',' expr ',' expr ',' expr '}'   #random
+    : '[' building (',' building)* ']'                  #multiple
+    | '{' expr ',' expr ',' expr ',' expr ',' expr '}'  #random
     ;
 
 building
     : '(' expr ',' expr ',' expr ')'
     ;
+
 
 MUL : '*' ;
 DIV : '/' ;
@@ -32,13 +33,7 @@ SUB : '-' ;
 POW : '**' ;
 
 ASSIGN : ':=' ;
-
 NUM : [0-9]+ ;
-/* //SINGLE : '(' NUM ',' NUM ',' NUM ')' ;
-MULTIPLE : '['SINGLE (',' SINGLE)* ']' ;
-RANDOM : '{' NUM ',' NUM ',' NUM ',' NUM ',' NUM '}' ; */
-
-ID  : ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
-
+ID  : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9')* ;
 
 WS : [ \n]+ -> skip ;

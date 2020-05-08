@@ -1,28 +1,20 @@
-import matplotlib
-import matplotlib.pyplot as plt  # grafica
+import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 from random import randint
 
 
-def toList(x):  # ineficiente ???
-    if isinstance(x, list):
-        return x
-    else:
-        return [x]
-
-
 class Skyline:
 
     def __init__(self, start=[], height=[], width=[]):
-        """ Creadora de Skylines """
-        self.start = toList(start)
-        self.width = toList(width)
-        self.height = toList(height)
+        """ Creadora de Skyline """
+        self.start = start
+        self.width = width
+        self.height = height
 
     @classmethod
     def random(cls, n, h, w, xmin, xmax):
-        """ Devueve una instancia de Skyline con los edificios aleatorios indicados """
+        """ Retorna una instància de Skyline amb edificis aleatoris. """
         start = []
         height = []
         width = []
@@ -40,20 +32,20 @@ class Skyline:
 
     @classmethod
     def single(cls, xmin, top, xmax):
-        """ Devuelve una instancia de Skyline del edificio indicado """
+        """ Retorna una instància de Skyline amb l'edificio indicat """
         start = [xmin]
         width = [xmax-xmin]
         height = [top]
         return cls(start, height, width)
 
     def plot(self):
-        """ crea un plot para representar por pantalla. Elimina edificios sin area, y de la parte negativa """
+        """ Genera un plot de barres per representar el Skyline. 
+            Retorna l'area i l'altura màxima. """
         xMin, xMax = self.minNmax()
         left = max(0, xMin)
-        # ahorra mucho tiempo al generar el plot
         normal = self.normalize(left, xMax)
 
-        area = sum(normal)  # solo la parte visible
+        area = sum(normal)
         if normal:
             top = max(normal)
         else:
@@ -68,23 +60,25 @@ class Skyline:
         ax = plt.figure().gca()
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-
         ax.bar(start, height, width, align='edge')
         return area, top
 
     def __add__(self, other):
-        if isinstance(other, int):  # desplaçament n posicions
+        """ Operació 'unió' i 'desplaçament a la dreta' """
+        if isinstance(other, int):  # desplaçament a la dreta
             start = [x+other for x in self.start]
             return Skyline(start, self.height, self.width)
-        elif isinstance(other, Skyline):  # unio
+
+        elif isinstance(other, Skyline):  # unió
             start = self.start + other.start
             height = self.height + other.height
             width = self.width + other.width
             return Skyline(start, height, width)
-        print("Error: en la suma")
+        print("Error: Suma incorrecte")
 
     def __mul__(self, other):
-        if isinstance(other, int):
+        """ Operació 'replicació' i 'intersecció' """
+        if isinstance(other, int):  # replicació
             xMin, xMax = self.minNmax()
             offset = xMax - xMin
             start = self.start.copy()
@@ -92,59 +86,49 @@ class Skyline:
                 start.extend([(i*offset) + x for x in self.start])
             return Skyline(start, self.height * other, self.width * other)
 
-        elif isinstance(other, Skyline):
+        elif isinstance(other, Skyline):  # intersecció
             a, b = self.minNmax()
             c, d = other.minNmax()
             left = max(a, c)
             right = min(b, d)
-            if right <= left:  # no hay interseccion!
+            if right <= left:  # no hi ha intersecció
                 return Skyline()
 
             normal1 = self.normalize(left, right)
             normal2 = other.normalize(left, right)
 
-            """ print(normal1)
-            print(normal2) """
-
             inter = []
             for n1, n2 in zip(normal1, normal2):
                 inter.append(min(n1, n2))
 
-            # print(inter)
             start, height, width = self.simplify(inter, left)
             return Skyline(start, height, width)
-
-        print("Error: en la multiplicacion")
+        print("Error: Multiplicació incorrecte")
 
     def __sub__(self, other):
-        if isinstance(other, int):  # desplaçament esquerra
+        """ Desplaçament a l'esquerra """
+        if isinstance(other, int):
             start = [x-other for x in self.start]
             return Skyline(start, self.height, self.width)
+        print("Error: Resta incorrecte")
 
-    """ def __neg__(self):  # mejorar con minNmax
+    def __neg__(self):  # mirall
+        """ Operació mirall """
         start = []
         xMin, xMax = self.minNmax()
         for s, w in zip(self.start, self.width):
-            start.append(xMin - (s+w-xMin))
-        offset = abs(xMin - min(start))  # error! MEJORAAAAAR!!!
-        start = [offset+x for x in start]
-        return Skyline(start, self.height, self.width) """
-    def __neg__(self):  # mejorar con minNmax
-        start = []
-        xMin, xMax = self.minNmax()
-        for s, w in zip(self.start, self.width):
-            start.append(xMax + (xMax-s) - w -(xMax-xMin))
-        """ offset = abs(xMin - min(start))  # error! MEJORAAAAAR!!!
-        start = [offset+x for x in start] """
+            start.append(xMax + xMin - (s+w))
         return Skyline(start, self.height, self.width)
 
     def getArea(self):
+        """ Retorna l'àrea del Skyline """
         xMin, xMax = self.minNmax()
         left = max(0, xMin)
         normal = self.normalize(left, xMax)
         return sum(normal)
 
     def minNmax(self):
+        """ Retorna  la posició inicial i final del Skyline"""
         xMin = 0
         if self.start:
             xMin = min(self.start)
@@ -155,7 +139,7 @@ class Skyline:
         return xMin, xMax
 
     def normalize(self, left, right):
-        """ normaliza seccion del Skyline devolviendo una lista con la altura en cada posición del intervalo """
+        """ Retorna la llista normalitzada de l'interval del Skyline que va de 'left' a 'right' """
         normal = [0]*(right-left)
         for i in range(len(self.start)):
             s = self.start[i]
@@ -164,13 +148,12 @@ class Skyline:
                 h = self.height[i]
                 pos = s-left
                 for j in range(w):
-                    # if 0 <= pos+j < len(inter):
                     if left <= s+j < right:
                         normal[pos+j] = max(normal[pos+j], h)
         return normal
 
     def simplify(self, normal, offset):
-        """ Genera minimo numero de edificios a partir de un vector normalizado """
+        """ Retorna el mínim d'edificis a partir d'una llista normalitzada """
         start = []
         height = []
         width = []
@@ -191,5 +174,4 @@ class Skyline:
         start.append(offset+s)
         height.append(h)
         width.append(w)
-
         return start, height, width

@@ -1,4 +1,4 @@
-# Generated from Skyline.g by ANTLR 4.8
+# Generated from Skyline.g4 by ANTLR 4.8
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .SkylineParser import SkylineParser
@@ -19,8 +19,8 @@ class SkylineVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SkylineParser#nana.
-    def visitNana(self, ctx:SkylineParser.NanaContext):
+    # Visit a parse tree produced by SkylineParser#exprStmt.
+    def visitExprStmt(self, ctx:SkylineParser.ExprStmtContext):
         return self.visitChildren(ctx)
 
 
