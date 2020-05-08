@@ -73,7 +73,7 @@ def save(update, context):
     try:
         user_id = update.effective_chat.id
         if not context.args:
-            raise Exception("id no indicat. Ús: /save id")
+            raise Exception("id no indicat")
         id = context.args[0]
         if id not in context.user_data:
             raise Exception("Variable '" + id + "' no definida")
@@ -98,7 +98,7 @@ def load(update, context):
     try:
         user_id = update.effective_chat.id
         if not context.args:
-            raise Exception("id no indicat. Ús: /load id")
+            raise Exception("id no indicat")
         id = context.args[0]
 
         directory = "./database/" + str(user_id)
