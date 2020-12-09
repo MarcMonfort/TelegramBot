@@ -1,6 +1,0 @@
-# Requirements without version specifier
-python-telegram-bot
-matplotlib
-antlr4-python3-runtime  
-
-#pickle is included in Python's standard library
